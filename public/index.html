@@ -1,46 +1,653 @@
-<!DOCTYPE html>
+<!doctype html>
+<!--
+  "What Can I Cook?" — interface redesign prototype.
+  Working app: real ingredient-matching engine + full 30-dish catalogue,
+  recipe catalogue fetched from recipes.json; dish photos in img/ (Wikimedia Commons contributors).
+  Design system: Lovable (warm cream, charcoal, inset-shadow CTAs).
+-->
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>What Can I Cook? — Recipes by Availability</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-<h1>What Can I Cook?</h1>
-<p id="catalogue-status" role="status">Loading catalogue…</p>
+
+<header class="topnav" data-od-id="topnav">
+  <div class="container topnav-inner">
+    <a class="wordmark" href="#top" aria-label="What can I cook — home">What can I cook<span class="qm">?</span></a>
+    <div class="navlinks">
+      <a href="#results">Results</a>
+    </div>
+    <button class="btn btn-primary" id="open-add" data-od-id="add-recipe-cta">Add a recipe</button>
+  </div>
 </header>
-<main>
-<section id="input-area" aria-label="Filters">
-<label>Ingredients (comma-separated) <input id="ingredients" type="text" placeholder="eggs, rice, tomato" autocomplete="off"></label>
-<div id="staples" aria-label="Staple quick-picks"></div>
-<label>Max time <select id="maxTime"><option value="">Any</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select></label>
-<label>Difficulty <select id="difficulty"><option>Any</option><option>Easy</option><option>Medium</option><option>Hard</option></select></label>
-<label>Region <select id="region"><option>Any</option><option>Nigeria</option><option>West-Africa</option><option>Global</option></select></label>
-<label><input id="makeableOnly" type="checkbox"> Fully-makeable only</label>
-<p id="filter-note" role="status"></p>
+
+<section class="hero" id="top" data-od-id="hero">
+  <div class="hero-wash" aria-hidden="true"></div>
+  <div class="container">
+    <p class="eyebrow">Recipes by availability</p>
+    <h1 class="h1">Cook with what you already have.</h1>
+    <p class="lead">List what's in your kitchen and get every dish ranked by how close you are — from ready-now to near-miss, with exactly what's missing spelled out.</p>
+
+    <div class="pantry" data-od-id="pantry">
+      <div class="pantry-head">
+        <span class="group-head">What's in your kitchen</span>
+        <span class="pantry-count" id="pantry-count" role="status" aria-live="polite">Loading catalogue…</span>
+      </div>
+      <div class="chips-row" id="chips" aria-label="Your ingredients"></div>
+      <div class="pantry-input-row">
+        <input id="pantry-input" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Add an ingredient — e.g. eggs, rice, tomato" aria-label="Add an ingredient" />
+      </div>
+      <div class="sug-row" id="suggestions" aria-label="Ingredient suggestions"></div>
+      <div class="quick-row" id="quick-add" aria-label="Quick-add staples">
+        <span class="label">Quick add</span>
+      </div>
+    </div>
+  </div>
 </section>
-<section id="grid" aria-label="Recipe results"></section>
-<section id="detail" aria-label="Recipe detail" hidden></section>
-<section id="add-recipe" aria-label="Add your own recipe">
-<h2>Add your own recipe</h2>
-<form id="addForm">
-<label>Title <input id="f-title" required maxlength="120"></label>
-<label>Ingredients (comma-separated) <textarea id="f-ingredients" required placeholder="yam, pepper, palm oil"></textarea></label>
-<label>Time (minutes) <input id="f-time" type="number" min="1" max="480" required></label>
-<label>Difficulty <select id="f-difficulty"><option>Easy</option><option>Medium</option><option>Hard</option></select></label>
-<label>Cuisine <input id="f-cuisine" value="Homemade"></label>
-<fieldset><legend>Regions</legend><label><input type="checkbox" class="f-region" value="Nigeria"> Nigeria</label> <label><input type="checkbox" class="f-region" value="West-Africa"> West-Africa</label> <label><input type="checkbox" class="f-region" value="Global" checked> Global</label></fieldset>
-<label>Steps (one per line) <textarea id="f-steps" required placeholder="Boil yam..."></textarea></label>
-<label>Servings <input id="f-servings" type="number" min="1" value="2"></label>
-<label>Image URL (optional) <input id="f-image" type="url" placeholder="https://…"></label>
-<button type="submit">Save recipe</button>
-<p id="add-note" role="status"></p>
-</form>
-</section>
-<div id="error" role="alert" hidden></div>
+
+<div class="filterbar" data-od-id="filterbar">
+  <div class="container filterbar-inner">
+    <div class="seg" id="seg-time" role="group" aria-label="Maximum cooking time">
+      <span class="seg-label">Time</span>
+      <button type="button" data-val="" aria-pressed="true">Any</button>
+      <button type="button" data-val="15" aria-pressed="false">≤15 min</button>
+      <button type="button" data-val="30" aria-pressed="false">≤30 min</button>
+      <button type="button" data-val="60" aria-pressed="false">≤60 min</button>
+    </div>
+    <div class="seg" id="seg-difficulty" role="group" aria-label="Difficulty">
+      <span class="seg-label">Level</span>
+      <button type="button" data-val="Any" aria-pressed="true">Any</button>
+      <button type="button" data-val="Easy" aria-pressed="false">Easy</button>
+      <button type="button" data-val="Medium" aria-pressed="false">Medium</button>
+      <button type="button" data-val="Hard" aria-pressed="false">Hard</button>
+    </div>
+    <div class="seg" id="seg-region" role="group" aria-label="Region">
+      <span class="seg-label">Region</span>
+      <button type="button" data-val="Any" aria-pressed="true">Any</button>
+      <button type="button" data-val="Nigeria" aria-pressed="false">Nigeria</button>
+      <button type="button" data-val="West-Africa" aria-pressed="false">West-Africa</button>
+      <button type="button" data-val="Global" aria-pressed="false">Global</button>
+    </div>
+    <div class="switch-wrap">
+      <button class="switch" id="makeable" role="switch" aria-checked="false" aria-label="Fully-makeable only"></button>
+      <span class="switch-label">Fully-makeable only</span>
+    </div>
+    <button class="btn btn-ghost btn-sm filter-reset" id="reset-filters" hidden>Reset filters</button>
+  </div>
+</div>
+
+<main id="content">
+  <section class="results container" id="results" data-od-id="results">
+    <div class="results-head">
+      <h2 class="h2" id="results-title">Your matches</h2>
+      <span class="meta" id="results-sub"></span>
+    </div>
+    <p class="filter-note" id="filter-note" role="status" aria-live="polite"></p>
+    <div id="grid"></div>
+    <button class="btn btn-secondary more-btn" id="more-btn" hidden>Show more</button>
+    <div class="empty-state" id="empty-state" hidden>
+      <p id="empty-copy">Nothing fits yet — your time, difficulty, region or pantry is too tight.</p>
+      <div class="fix-row" id="empty-fixes"></div>
+    </div>
+    <div class="error-state" id="error" role="alert" hidden>
+      <p id="error-copy"></p>
+    </div>
+  </section>
 </main>
+
+<footer class="pagefoot" data-od-id="footer">
+  <div class="container row">
+    <span>What Can I Cook? — recipes by availability</span>
+    <span class="meta">30-dish catalogue + your own recipes, stored in this browser · Dish photographs by Wikimedia Commons contributors</span>
+  </div>
+</footer>
+
+<!-- detail panel -->
+<div class="scrim" id="detail-scrim" hidden></div>
+<aside class="panel" id="detail" role="dialog" aria-modal="true" aria-label="Recipe detail" hidden data-od-id="detail-panel"></aside>
+
+<!-- add-recipe modal -->
+<div class="modal-wrap" id="add-wrap" hidden>
+  <div class="scrim" id="add-scrim" style="position:fixed;inset:0;z-index:auto;"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-title" data-od-id="add-recipe-modal">
+    <div class="modal-top">
+      <h2 id="add-title">Add your own recipe</h2>
+      <button class="btn btn-ghost btn-sm" id="add-close" aria-label="Close">✕</button>
+    </div>
+    <p class="modal-sub">It saves to this browser and ranks alongside the catalogue immediately.</p>
+    <form id="add-form" novalidate>
+      <div class="form-grid">
+        <div class="field span-2">
+          <span id="lbl-title">Title</span>
+          <input id="f-title" maxlength="120" required aria-labelledby="lbl-title" />
+        </div>
+        <div class="field span-2">
+          <span id="lbl-ing">Ingredients — comma-separated</span>
+          <textarea id="f-ingredients" required placeholder="yam, pepper, palm oil" aria-labelledby="lbl-ing"></textarea>
+        </div>
+        <div class="field">
+          <span id="lbl-time">Time (minutes)</span>
+          <input id="f-time" type="number" min="1" max="480" required aria-labelledby="lbl-time" />
+        </div>
+        <div class="field">
+          <span id="lbl-diff">Difficulty</span>
+          <select id="f-difficulty" aria-labelledby="lbl-diff">
+            <option>Easy</option><option>Medium</option><option>Hard</option>
+          </select>
+        </div>
+        <div class="field">
+          <span id="lbl-cuisine">Cuisine</span>
+          <input id="f-cuisine" value="Homemade" aria-labelledby="lbl-cuisine" />
+        </div>
+        <div class="field">
+          <span id="lbl-serv">Servings</span>
+          <input id="f-servings" type="number" min="1" value="2" aria-labelledby="lbl-serv" />
+        </div>
+        <div class="field span-2">
+          <span id="lbl-regions">Regions</span>
+          <div class="region-set">
+            <label><input type="checkbox" class="f-region" value="Nigeria" /> Nigeria</label>
+            <label><input type="checkbox" class="f-region" value="West-Africa" /> West-Africa</label>
+            <label><input type="checkbox" class="f-region" value="Global" checked /> Global</label>
+          </div>
+        </div>
+        <div class="field span-2">
+          <span id="lbl-steps">Steps — one per line</span>
+          <textarea id="f-steps" required placeholder="Boil yam until soft…" aria-labelledby="lbl-steps"></textarea>
+        </div>
+      </div>
+      <p class="form-note" id="add-note" role="status"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="add-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save recipe</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
 <script src="app.js"></script>
+<script>
+/* ─── data (wired to recipes.json + img/ at build) ─────────────────────────────────────────────────────────── */
+let RECIPES = []; // loaded from recipes.json at boot
+const IMG = {
+  "akara": "img/akara.jpg",
+  "beans-plantain": "img/beans-plantain.jpg",
+  "beans-porridge": "img/beans-porridge.jpg",
+  "beef-pepper-soup": "img/beef-pepper-soup.jpg",
+  "catfish-pepper-soup": "img/catfish-pepper-soup.jpg",
+  "chicken-fried-rice": "img/chicken-fried-rice.jpg",
+  "couscous-veg": "img/veg-couscous.jpg",
+  "efo-riro": "img/efo-riro.jpg",
+  "egg-bread": "img/fried-eggs-bread.jpg",
+  "egusi-soup": "img/egusi-soup.jpg",
+  "fried-rice": "img/fried-rice.jpg",
+  "fried-yam-egg": "img/fried-yam.jpg",
+  "garlic-butter-rice": "img/garlic-butter-rice.jpg",
+  "jollof-rice": "img/jollof-rice.jpg",
+  "moi-moi": "img/moi-moi.jpg",
+  "noodles-egg": "img/noodles-egg.jpg",
+  "oats-porridge": "img/oats-porridge.jpg",
+  "ogbono-soup": "img/ogbono-soup.jpg",
+  "okra-soup": "img/okra-soup.jpg",
+  "omelette": "img/veggie-omelette.jpg",
+  "pancakes": "img/pancakes.jpg",
+  "plantain-egg": "img/fried-plantain-eggs.jpg",
+  "shawarma": "img/shawarma.jpg",
+  "spaghetti-jollof": "img/jollof-spaghetti.jpg",
+  "suya": "img/suya.jpg",
+  "tomato-pasta": "img/tomato-garlic-pasta.jpg",
+  "tuna-sandwich": "img/tuna-sandwich.jpg",
+  "veg-stir-fry": "img/veggie-stir-fry-rice.jpg",
+  "yam-porridge": "img/yam-porridge.jpg",
+};
+const IMG_DIM = {
+  "akara": [500, 281],
+  "beans-plantain": [500, 573],
+  "beans-porridge": [500, 503],
+  "beef-pepper-soup": [500, 375],
+  "catfish-pepper-soup": [500, 375],
+  "chicken-fried-rice": [500, 339],
+  "couscous-veg": [500, 551],
+  "efo-riro": [500, 347],
+  "egg-bread": [500, 375],
+  "egusi-soup": [500, 375],
+  "fried-rice": [500, 333],
+  "fried-yam-egg": [500, 357],
+  "garlic-butter-rice": [500, 375],
+  "jollof-rice": [500, 331],
+  "moi-moi": [500, 279],
+  "noodles-egg": [500, 375],
+  "oats-porridge": [500, 483],
+  "ogbono-soup": [500, 469],
+  "okra-soup": [500, 368],
+  "omelette": [500, 375],
+  "pancakes": [500, 625],
+  "plantain-egg": [303, 226],
+  "shawarma": [500, 655],
+  "spaghetti-jollof": [500, 667],
+  "suya": [500, 375],
+  "tomato-pasta": [500, 375],
+  "tuna-sandwich": [500, 700],
+  "veg-stir-fry": [500, 333],
+  "yam-porridge": [500, 497],
+};
+
+/* ─── pantry UI config ──────────────────────────────────────────── */
+const QUICK_ADD = ["salt", "vegetable oil", "rice", "eggs", "onion", "garlic", "tomato", "pepper"];
+const START_PANTRY = ["eggs", "rice", "onion", "tomato", "pepper", "palm oil", "garlic", "bread"];
+
+/* ─── state ────────────────────────────────────────────────────────── */
+const state = {
+  pantry: START_PANTRY.slice(),
+  maxTime: "",
+  difficulty: "Any",
+  region: "Any",
+  makeableOnly: false,
+  showLongShots: false,
+  visibleLimit: 12,
+  lastFocus: null,
+};
+
+const $ = (id) => document.getElementById(id);
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* ─── suggestions vocab ────────────────────────────────────────────── */
+let VOCAB = [];
+function buildVocab() {
+  const counts = new Map();
+  for (const r of allRecipes()) {
+    for (const i of r.ingredients) {
+      const n = normalizeIngredient(ingredientName(i));
+      if (STAPLES.has(n)) continue;
+      counts.set(n, (counts.get(n) || 0) + 1);
+    }
+  }
+  VOCAB = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map((e) => e[0]);
+}
+function allRecipes() { return RECIPES.concat(getUserRecipes()); }
+
+/* ─── pantry rendering ─────────────────────────────────────────────── */
+function renderPantry() {
+  const chips = $("chips");
+  chips.innerHTML = state.pantry.map((p, i) =>
+    `<span class="chip">${escapeHtml(p)}<button type="button" data-remove="${i}" aria-label="Remove ${escapeHtml(p)}">✕</button></span>`
+  ).join("");
+  chips.querySelectorAll("button[data-remove]").forEach((b) =>
+    b.addEventListener("click", () => { state.pantry.splice(Number(b.dataset.remove), 1); syncQuick(); render(); }));
+
+  $("quick-add").querySelectorAll(".quick").forEach((q) =>
+    q.setAttribute("aria-pressed", state.pantry.some((p) => p.toLowerCase() === q.dataset.s) ? "true" : "false"));
+}
+function syncQuick() {
+  document.querySelectorAll("#quick-add .quick").forEach((q) =>
+    q.setAttribute("aria-pressed", state.pantry.some((p) => p.toLowerCase() === q.dataset.s) ? "true" : "false"));
+}
+function addIngredient(name) {
+  const n = name.trim();
+  if (!n) return;
+  if (!state.pantry.some((p) => p.toLowerCase() === n.toLowerCase())) {
+    state.pantry.push(n);
+    render();
+  }
+}
+function renderSuggestions() {
+  const input = $("pantry-input");
+  const q = input.value.trim().toLowerCase();
+  const row = $("suggestions");
+  if (!q) { row.innerHTML = ""; return; }
+  const parts = q.split(",");
+  const tail = parts[parts.length - 1].trim().toLowerCase();
+  if (!tail) { row.innerHTML = ""; return; }
+  const have = new Set(state.pantry.map((p) => p.toLowerCase()));
+  const matches = VOCAB.filter((v) => v.includes(tail) && !have.has(v)).slice(0, 8);
+  row.innerHTML = matches.map((m) =>
+    `<button type="button" class="sug" data-add="${escapeHtml(m)}"><span class="plus">＋</span>${escapeHtml(m)}</button>`
+  ).join("");
+  row.querySelectorAll("button[data-add]").forEach((b) =>
+    b.addEventListener("click", () => {
+      addIngredient(b.dataset.add);
+      input.value = "";
+      renderSuggestions();
+      input.focus();
+    }));
+}
+
+/* ─── results rendering ────────────────────────────────────────────── */
+function currentFilters() {
+  return {
+    ingredients: state.pantry,
+    maxTime: state.maxTime === "" ? null : Number(state.maxTime),
+    difficulty: state.difficulty,
+    region: state.region,
+    fullyMakeableOnly: state.makeableOnly,
+  };
+}
+
+function thumbHtml(r) {
+  if (IMG[r.id]) {
+    const [w, h] = IMG_DIM[r.id] || [500, 375];
+    return `<img class="result-thumb" src="${IMG[r.id]}" width="${w}" height="${h}" alt="" loading="lazy" />`;
+  }
+  return `<span class="tile" aria-hidden="true">${escapeHtml(r.title.charAt(0))}</span>`;
+}
+
+function resultRowHtml(entry) {
+  const { recipe: r, score, missing } = entry;
+  const pct = Math.round(score * 100);
+  const full = score === 1;
+  const hint = missing.length ? subHint(missing) : "";
+  const missTags = missing.length
+    ? `<div class="missing-row"><span class="meta">Missing</span>${missing.slice(0, 3).map((m) =>
+        `<span class="miss-tag">${escapeHtml(m)}</span>`).join("")}${missing.length > 3 ? `<span class="meta">+${missing.length - 3} more</span>` : ""}</div>`
+    : "";
+  const badge = full ? `<span class="cook-badge">✓ Cook now</span>` : "";
+  return `<button type="button" class="result-row" data-id="${r.id}" data-full="${full}" aria-label="${escapeHtml(r.title)}, ${pct} percent match">
+    ${thumbHtml(r)}
+    <div class="result-main">
+      <div class="result-title-row"><span class="result-title">${escapeHtml(r.title)}</span>${badge}</div>
+      <div class="result-meta">${r.timeMinutes} min · ${escapeHtml(r.difficulty)} · ${escapeHtml(r.cuisine)} · serves ${r.servings || "—"}</div>
+      ${missTags}
+      ${hint ? `<div class="sub-hint">↪ ${escapeHtml(hint)}</div>` : ""}
+    </div>
+    <div class="result-side">
+      <span class="meter-label">${pct}% match</span>
+      <span class="meter" aria-hidden="true"><span class="meter-fill" style="width:${pct}%"></span></span>
+    </div>
+  </button>`;
+}
+
+function groupRowHtml(label, n) {
+  return `<div class="group-row"><span class="group-head">${label}</span><span class="n">${n} ${n === 1 ? "dish" : "dishes"}</span></div>`;
+}
+
+function renderResults() {
+  const grid = $("grid");
+  const results = queryRecipes(currentFilters(), allRecipes());
+  const ready = results.filter((r) => r.score === 1);
+  const near = results.filter((r) => r.score > 0 && r.score < 1);
+  const long = results.filter((r) => r.score === 0);
+
+  const count = $("pantry-count");
+  count.innerHTML = `<strong>${ready.length}</strong> of ${allRecipes().length} dishes ready now · ${near.length} near miss${near.length === 1 ? "" : "es"}`;
+
+  $("results-sub").textContent = `${results.length} of ${allRecipes().length} dishes pass your filters`;
+
+  const note = $("filter-note");
+  if (state.makeableOnly) {
+    const base = queryRecipes({ ...currentFilters(), fullyMakeableOnly: false }, allRecipes());
+    const hidden = base.length - results.length;
+    note.textContent = hidden > 0
+      ? `${hidden} near-miss${hidden === 1 ? "" : "es"} hidden by the fully-makeable filter.`
+      : "Showing only fully-makeable recipes.";
+  } else {
+    note.textContent = "";
+  }
+
+  const noResults = ready.length + near.length + long.length === 0;
+  $("empty-state").hidden = !noResults;
+  $("more-btn").hidden = true;
+  if (noResults) {
+    const f = currentFilters();
+    const fixes = [];
+    if (f.fullyMakeableOnly) fixes.push(`<button class="btn btn-secondary btn-sm" data-fix="toggle">Show near-misses</button>`);
+    if (f.maxTime !== null) fixes.push(`<button class="btn btn-secondary btn-sm" data-fix="time">Clear time limit</button>`);
+    if (f.difficulty !== "Any") fixes.push(`<button class="btn btn-secondary btn-sm" data-fix="difficulty">Clear difficulty</button>`);
+    if (f.region !== "Any") fixes.push(`<button class="btn btn-secondary btn-sm" data-fix="region">Clear region</button>`);
+    fixes.push(`<button class="btn btn-secondary btn-sm" data-fix="pantry">Clear pantry</button>`);
+    $("empty-fixes").innerHTML = fixes.join("");
+    $("empty-fixes").querySelectorAll("button[data-fix]").forEach((b) => b.addEventListener("click", () => {
+      const fix = b.dataset.fix;
+      if (fix === "toggle") setMakeable(false);
+      if (fix === "time") setSeg("seg-time", "maxTime", "");
+      if (fix === "difficulty") setSeg("seg-difficulty", "difficulty", "Any");
+      if (fix === "region") setSeg("seg-region", "region", "Any");
+      if (fix === "pantry") { state.pantry = []; render(); return; }
+      render();
+    }));
+    grid.innerHTML = "";
+    return;
+  }
+
+  const rows = [];
+  if (ready.length) rows.push(groupRowHtml("Cook now — everything on hand", ready.length));
+  if (near.length) rows.push(groupRowHtml("Almost there", near.length));
+
+  const mainRows = ready.concat(near);
+  const visibleMain = mainRows.slice(0, state.visibleLimit);
+
+  rows.push(visibleMain.map(resultRowHtml).join(""));
+
+  if (long.length) {
+    if (state.showLongShots) {
+      rows.push(groupRowHtml("Long shots — everything missing", long.length));
+      rows.push(long.map(resultRowHtml).join(""));
+    } else {
+      rows.push(`<button type="button" class="btn btn-secondary more-btn" id="longshots-btn">Show ${long.length} long shot${long.length === 1 ? "" : "s"} — dishes that need everything</button>`);
+    }
+  }
+
+  grid.innerHTML = rows.join("");
+  const longBtn = $("longshots-btn");
+  if (longBtn) longBtn.addEventListener("click", () => { state.showLongShots = true; renderResults(); });
+
+  grid.querySelectorAll(".result-row").forEach((row) => {
+    row.addEventListener("click", () => openDetail(row.dataset.id));
+  });
+
+  const more = $("more-btn");
+  if (visibleMain.length < mainRows.length) {
+    more.hidden = false;
+    more.textContent = `Show all ${mainRows.length} matches`;
+    more.onclick = () => { state.visibleLimit = mainRows.length; renderResults(); };
+  }
+}
+
+/* ─── detail panel ─────────────────────────────────────────────────── */
+function openDetail(id) {
+  const r = allRecipes().find((x) => x.id === id);
+  if (!r) return;
+  state.lastFocus = document.activeElement;
+  const available = new Set(state.pantry.map(normalizeIngredient));
+  const ings = r.ingredients.map((i) => {
+    const name = typeof i === "string" ? i : i.name;
+    const norm = normalizeIngredient(name);
+    const isStaple = STAPLES.has(norm);
+    const have = isStaple || available.has(norm);
+    const hint = !have && SUBSTITUTIONS[norm] ? ` — try ${SUBSTITUTIONS[norm]}` : "";
+    return `<li class="${have ? "have" : "missing"}"><span class="mark">${have ? "✓" : "✕"}</span>${escapeHtml(name)}${isStaple && !available.has(norm) ? `<span class="staple-note">staple</span>` : ""}${hint ? `<span class="staple-note">↪ ${escapeHtml(SUBSTITUTIONS[norm])}</span>` : ""}</li>`;
+  }).join("");
+  const photo = IMG[r.id]
+    ? (() => {
+        const [w, h] = IMG_DIM[r.id] || [500, 375];
+        return `<img src="${IMG[r.id]}" width="${w}" height="${h}" style="width:auto;height:auto;max-height:300px;max-width:100%;" alt="${escapeHtml(r.title)}" />`;
+      })()
+    : "";
+  const panel = $("detail");
+  panel.innerHTML = `
+    <div class="panel-top">
+      <button class="btn btn-ghost btn-sm" id="detail-back">← Back to results</button>
+      <button class="btn btn-ghost btn-sm" id="detail-close" aria-label="Close">✕</button>
+    </div>
+    ${photo ? `<div class="panel-photo">${photo}</div>` : ""}
+    <h2>${escapeHtml(r.title)}</h2>
+    <span class="meta">${r.timeMinutes} min · ${escapeHtml(r.difficulty)} · ${escapeHtml(r.cuisine)} · serves ${r.servings || "—"}</span>
+    <h3>Ingredients</h3>
+    <ul class="ing-list">${ings}</ul>
+    <h3>Steps</h3>
+    <ol class="steps-list">${r.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
+    ${r.source === "user" ? `<p class="user-source meta">Added by you · stored in this browser</p>` : ""}
+  `;
+  panel.hidden = false;
+  $("detail-scrim").hidden = false;
+  document.body.style.overflow = "hidden";
+  const close = () => closeDetail();
+  $("detail-back").addEventListener("click", close);
+  $("detail-close").addEventListener("click", close);
+  $("detail-scrim").onclick = close;
+  $("detail-close").focus();
+}
+function closeDetail() {
+  $("detail").hidden = true;
+  $("detail-scrim").hidden = true;
+  document.body.style.overflow = "";
+  if (state.lastFocus) { state.lastFocus.focus(); state.lastFocus = null; }
+}
+
+/* ─── add-recipe modal ─────────────────────────────────────────────── */
+function openAdd() {
+  state.lastFocus = document.activeElement;
+  $("add-wrap").hidden = false;
+  document.body.style.overflow = "hidden";
+  $("f-title").focus();
+}
+function closeAdd() {
+  $("add-wrap").hidden = true;
+  document.body.style.overflow = "";
+  if (state.lastFocus) { state.lastFocus.focus(); state.lastFocus = null; }
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+/* ─── filters wiring ───────────────────────────────────────────────── */
+function setSeg(segId, key, val) {
+  const seg = $(segId);
+  seg.querySelectorAll("button").forEach((b) =>
+    b.setAttribute("aria-pressed", b.dataset.val === String(val) ? "true" : "false"));
+  state[key] = val;
+}
+function setMakeable(v) {
+  state.makeableOnly = v;
+  $("makeable").setAttribute("aria-checked", v ? "true" : "false");
+}
+function syncReset() {
+  const dirty = state.maxTime !== "" || state.difficulty !== "Any" || state.region !== "Any" || state.makeableOnly;
+  $("reset-filters").hidden = !dirty;
+}
+
+function render() {
+  renderPantry();
+  renderResults();
+  syncReset();
+}
+
+/* ─── boot ─────────────────────────────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    RECIPES = await loadCatalogue();
+    buildVocab();
+    const quickRow = $("quick-add");
+    QUICK_ADD.forEach((s) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "quick";
+      b.dataset.s = s;
+      b.textContent = `＋ ${s}`;
+      b.addEventListener("click", () => {
+        if (state.pantry.some((p) => p.toLowerCase() === s)) {
+          state.pantry = state.pantry.filter((p) => p.toLowerCase() !== s);
+        } else {
+          addIngredient(s);
+        }
+        syncQuick();
+        render();
+      });
+      quickRow.appendChild(b);
+    });
+
+    const input = $("pantry-input");
+    input.addEventListener("input", () => renderSuggestions());
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === ",") {
+        e.preventDefault();
+        const parts = input.value.split(",");
+        const tail = parts[parts.length - 1].trim();
+        if (tail) { addIngredient(tail); input.value = ""; renderSuggestions(); }
+      } else if (e.key === "Backspace" && input.value === "" && state.pantry.length) {
+        state.pantry.pop();
+        render();
+      }
+    });
+
+    [["seg-time", "maxTime"], ["seg-difficulty", "difficulty"], ["seg-region", "region"]].forEach(([segId, key]) => {
+      $(segId).addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-val]");
+        if (!b) return;
+        setSeg(segId, key, b.dataset.val);
+        render();
+      });
+    });
+    $("makeable").addEventListener("click", () => { setMakeable(!state.makeableOnly); render(); });
+    $("reset-filters").addEventListener("click", () => {
+      setSeg("seg-time", "maxTime", "");
+      setSeg("seg-difficulty", "difficulty", "Any");
+      setSeg("seg-region", "region", "Any");
+      setMakeable(false);
+      state.showLongShots = false;
+      render();
+    });
+
+    $("open-add").addEventListener("click", openAdd);
+    $("add-close").addEventListener("click", closeAdd);
+    $("add-cancel").addEventListener("click", closeAdd);
+    $("add-scrim").addEventListener("click", closeAdd);
+    $("add-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const note = $("add-note");
+      note.classList.remove("err");
+      try {
+        const saved = persistUserRecipe(saveUserRecipe({
+          title: $("f-title").value,
+          ingredients: $("f-ingredients").value,
+          timeMinutes: $("f-time").value,
+          difficulty: $("f-difficulty").value,
+          cuisine: $("f-cuisine").value,
+          regions: [...document.querySelectorAll(".f-region:checked")].map((c) => c.value),
+          steps: $("f-steps").value,
+          servings: $("f-servings").value,
+        }));
+        note.textContent = "";
+        e.target.reset();
+        $("f-cuisine").value = "Homemade";
+        $("f-servings").value = "2";
+        closeAdd();
+        buildVocab();
+        toast(`Saved “${saved.title}” — it now ranks with the catalogue.`);
+        render();
+      } catch (err) {
+        note.textContent = err.message;
+        note.classList.add("err");
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        if (!$("add-wrap").hidden) closeAdd();
+        else if (!$("detail").hidden) closeDetail();
+      }
+    });
+
+    render();
+  } catch (e) {
+    const el = $("error");
+    $("error-copy").textContent = `Could not load recipes: ${e.message}`;
+    el.hidden = false;
+  }
+});
+</script>
 </body>
 </html>
