@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 03 (needs schema + grid to surface user dishes).
 
-**Status:** ready-for-agent
+**Status:** done (built + closed gh#5)
 
 - [ ] Form validates title, ≥1 ingredient, timeMinutes, difficulty, region; saves with `u-<uuid>`, `source: user`, timestamps to `rba:user-recipes:v1` (URL-only images)
 - [ ] Merged catalogue (`seeds + users`) ranks user dishes identically; reload persists them

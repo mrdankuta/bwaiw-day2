@@ -51,10 +51,53 @@ function getUserRecipes() {
     const raw = localStorage.getItem("rba:user-recipes:v1");
     if (!raw) return [];
     const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
+    if (!Array.isArray(arr)) throw new Error("overlay not an array");
+    return arr;
   } catch {
+    try { localStorage.removeItem("rba:user-recipes:v1"); } catch { /* private mode */ }
     return [];
   }
+}
+
+function makeId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return `u-${crypto.randomUUID()}`;
+  return `u-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`;
+}
+
+function saveUserRecipe(input) {
+  const title = String(input.title || "").trim();
+  const ingredients = (Array.isArray(input.ingredients) ? input.ingredients : String(input.ingredients || "").split(",")).map((s) => String(s).trim()).filter(Boolean);
+  const timeMinutes = Number(input.timeMinutes);
+  const steps = (Array.isArray(input.steps) ? input.steps : String(input.steps || "").split("\n")).map((s) => String(s).trim()).filter(Boolean);
+  if (!title) throw new Error("Title is required");
+  if (ingredients.length === 0) throw new Error("At least one ingredient is required");
+  if (!Number.isFinite(timeMinutes) || timeMinutes < 1) throw new Error("Valid timeMinutes is required");
+  if (!["Easy", "Medium", "Hard"].includes(input.difficulty)) throw new Error("Difficulty must be Easy/Medium/Hard");
+  if (steps.length === 0) throw new Error("At least one step is required");
+  const regions = (input.regions || []).filter(Boolean);
+  const now = new Date().toISOString();
+  const recipe = {
+    id: makeId(),
+    title,
+    ingredients,
+    timeMinutes,
+    difficulty: input.difficulty,
+    cuisine: String(input.cuisine || "Homemade"),
+    regions: regions.length ? regions : ["Global"],
+    steps,
+    servings: Number(input.servings) || 2,
+    imageUrl: String(input.imageUrl || ""),
+    createdAt: now,
+    updatedAt: now,
+    source: "user",
+  };
+  const all = getUserRecipes().concat(recipe);
+  try {
+    localStorage.setItem("rba:user-recipes:v1", JSON.stringify(all));
+  } catch (e) {
+    throw new Error(`Could not save (storage full?): ${e.message}`);
+  }
+  return recipe;
 }
 
 let CATALOGUE = [];
@@ -153,6 +196,28 @@ async function boot() {
     document.getElementById("catalogue-status").textContent = `${CATALOGUE.length} recipes loaded.`;
     ["ingredients", "maxTime", "difficulty", "region", "makeableOnly"].forEach((id) =>
       document.getElementById(id).addEventListener("input", debounce(refresh, 200)));
+    document.getElementById("addForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const note = document.getElementById("add-note");
+      try {
+        const saved = saveUserRecipe({
+          title: document.getElementById("f-title").value,
+          ingredients: document.getElementById("f-ingredients").value,
+          timeMinutes: document.getElementById("f-time").value,
+          difficulty: document.getElementById("f-difficulty").value,
+          cuisine: document.getElementById("f-cuisine").value,
+          regions: [...document.querySelectorAll(".f-region:checked")].map((c) => c.value),
+          steps: document.getElementById("f-steps").value,
+          servings: document.getElementById("f-servings").value,
+          imageUrl: document.getElementById("f-image").value,
+        });
+        note.textContent = `Saved “${saved.title}” — it now ranks with the catalogue.`;
+        e.target.reset();
+        refresh();
+      } catch (err) {
+        note.textContent = `Could not save: ${err.message}`;
+      }
+    });
     refresh();
   } catch (e) {
     showError(`Could not load recipes: ${e.message}`);
@@ -215,4 +280,4 @@ function queryRecipes(filters = {}, catalogue = []) {
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", boot);
-if (typeof module !== "undefined") module.exports = { loadCatalogue, validateCatalogue, queryRecipes, normalizeIngredient, STAPLES, getUserRecipes, subHint, SUBSTITUTIONS };
+if (typeof module !== "undefined") module.exports = { loadCatalogue, validateCatalogue, queryRecipes, normalizeIngredient, STAPLES, getUserRecipes, saveUserRecipe, subHint, SUBSTITUTIONS };

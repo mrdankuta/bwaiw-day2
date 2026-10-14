@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done (built + closed gh#1)
 
 - [ ] App serves over http(s) and renders shell with no console errors
 - [ ] `recipes.json` holds ~30 recipes matching spec schema (id, title, ingredients, timeMinutes, difficulty, cuisine, regions, steps, servings)

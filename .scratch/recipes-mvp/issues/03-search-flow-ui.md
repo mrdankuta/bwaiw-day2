@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02 (needs catalogue seam + rank engine).
 
-**Status:** ready-for-agent
+**Status:** done (built + closed gh#3)
 
 - [ ] Typing ingredients + changing time/difficulty/region re-ranks the grid via `queryRecipes` with ~200ms input debounce
 - [ ] Cards show match %, time, difficulty, cuisine; detail shows steps + checklist; back returns to same filters
