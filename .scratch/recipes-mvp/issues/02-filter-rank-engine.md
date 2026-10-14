@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (needs locked recipe schema).
 
-**Status:** ready-for-agent
+**Status:** done (built: queryRecipes + 7 tests green; closed gh#2)
 
 - [ ] Score = matched non-staple / total non-staple; staples auto-matched; normalization + synonyms work
 - [ ] Time/difficulty/region act as hard filters; ingredients rank only
