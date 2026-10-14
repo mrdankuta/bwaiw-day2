@@ -1,0 +1,27 @@
+{
+  "name": "day2proj",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrdankuta/bwaiw-day2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mrdankuta/bwaiw-day2/issues"
+  },
+  "homepage": "https://github.com/mrdankuta/bwaiw-day2#readme",
+  "devDependencies": {
+    "wrangler": "^4.151.0"
+  }
+}

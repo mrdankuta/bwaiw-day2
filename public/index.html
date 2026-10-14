@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Can I Cook? — Recipes by Availability</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+<h1>What Can I Cook?</h1>
+<p id="catalogue-status" role="status">Loading catalogue…</p>
+</header>
+<main>
+<section id="input-area" aria-label="Filters">
+<label>Ingredients (comma-separated) <input id="ingredients" type="text" placeholder="eggs, rice, tomato" autocomplete="off"></label>
+<div id="staples" aria-label="Staple quick-picks"></div>
+<label>Max time <select id="maxTime"><option value="">Any</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select></label>
+<label>Difficulty <select id="difficulty"><option>Any</option><option>Easy</option><option>Medium</option><option>Hard</option></select></label>
+<label>Region <select id="region"><option>Any</option><option>Nigeria</option><option>West-Africa</option><option>Global</option></select></label>
+<label><input id="makeableOnly" type="checkbox"> Fully-makeable only</label>
+<p id="filter-note" role="status"></p>
+</section>
+<section id="grid" aria-label="Recipe results"></section>
+<section id="detail" aria-label="Recipe detail" hidden></section>
+<section id="add-recipe" aria-label="Add your own recipe">
+<h2>Add your own recipe</h2>
+<form id="addForm">
+<label>Title <input id="f-title" required maxlength="120"></label>
+<label>Ingredients (comma-separated) <textarea id="f-ingredients" required placeholder="yam, pepper, palm oil"></textarea></label>
+<label>Time (minutes) <input id="f-time" type="number" min="1" max="480" required></label>
+<label>Difficulty <select id="f-difficulty"><option>Easy</option><option>Medium</option><option>Hard</option></select></label>
+<label>Cuisine <input id="f-cuisine" value="Homemade"></label>
+<fieldset><legend>Regions</legend><label><input type="checkbox" class="f-region" value="Nigeria"> Nigeria</label> <label><input type="checkbox" class="f-region" value="West-Africa"> West-Africa</label> <label><input type="checkbox" class="f-region" value="Global" checked> Global</label></fieldset>
+<label>Steps (one per line) <textarea id="f-steps" required placeholder="Boil yam..."></textarea></label>
+<label>Servings <input id="f-servings" type="number" min="1" value="2"></label>
+<label>Image URL (optional) <input id="f-image" type="url" placeholder="https://…"></label>
+<button type="submit">Save recipe</button>
+<p id="add-note" role="status"></p>
+</form>
+</section>
+<div id="error" role="alert" hidden></div>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
