@@ -13,7 +13,7 @@ Build-ready spec + clickable low-fi prototype for a home-cook recipe webapp that
 
 <!-- the index: one line per closed ticket, enough to judge relevance, then zoom the link for the detail the ticket holds -->
 
-<!-- none yet — charting resolves nothing -->
+- [Static MVP tech pattern](issues/05-static-mvp-tech-pattern.md): vanilla JS + recipes.json, localStorage overlay, GitHub Pages host — see branch `research/static-mvp`.
 
 ## Not yet specified
 
@@ -21,7 +21,7 @@ Build-ready spec + clickable low-fi prototype for a home-cook recipe webapp that
 - Location depth: cuisine tag vs seasonal availability vs units/language; data source for regions.
 - Substitution logic: static map vs heuristic; how missing items display.
 - Seed content sourcing: who writes 30 recipes, licensing/images.
-- Post-prototype build plan: styling system, mobile layout, deployment target, persistence migration path.
+- Post-prototype build plan: styling system, mobile layout.
 
 ## Out of scope
 
