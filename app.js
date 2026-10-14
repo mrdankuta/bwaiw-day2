@@ -28,6 +28,24 @@ function showError(msg) {
 
 const QUICK_STAPLES = ["salt", "oil", "water", "rice", "eggs", "onion", "garlic"];
 
+const SUBSTITUTIONS = {
+  "butter": "vegetable oil",
+  "milk": "water",
+  "mayonnaise": "plain yogurt",
+  "scent leaves": "basil",
+  "stockfish": "extra beef",
+  "green peas": "green beans",
+  "sweet corn": "skip it",
+  "shawarma bread": "any flatbread",
+  "soy sauce": "salt",
+  "ketchup": "tomato paste with a pinch of sugar",
+};
+
+function subHint(missing) {
+  const hit = missing.find((m) => SUBSTITUTIONS[m]);
+  return hit ? `No ${hit}? try ${SUBSTITUTIONS[hit]}.` : "";
+}
+
 function getUserRecipes() {
   try {
     const raw = localStorage.getItem("rba:user-recipes:v1");
@@ -56,9 +74,28 @@ function readFilters() {
 
 function renderGrid(results) {
   const grid = document.getElementById("grid");
-  grid.innerHTML = results.slice(0, 24).map(({ recipe, score, missing }) =>
-    `<article class="card" data-id="${recipe.id}" tabindex="0"><h3>${escapeHtml(recipe.title)}</h3><p>${Math.round(score * 100)}% · ${recipe.timeMinutes} min · ${recipe.difficulty} · ${escapeHtml(recipe.cuisine)}</p>${missing.length ? `<p class="missing">Missing: ${missing.slice(0, 3).map(escapeHtml).join(", ")}${missing.length > 3 ? ` +${missing.length - 3} more` : ""}</p>` : `<p class="makeable">All ingredients on hand</p>`}</article>`
-  ).join("");
+  if (results.length === 0) {
+    const f = readFilters();
+    const loosen = [];
+    if (f.fullyMakeableOnly) loosen.push(`<button type="button" data-fix="toggle">Show near-misses</button>`);
+    if (f.maxTime !== null) loosen.push(`<button type="button" data-fix="time">Clear time limit</button>`);
+    if (f.difficulty !== "Any") loosen.push(`<button type="button" data-fix="difficulty">Clear difficulty</button>`);
+    loosen.push(`<button type="button" data-fix="ingredients">Clear ingredients</button>`);
+    grid.innerHTML = `<div class="empty"><p>No recipes match. Try loosening a filter — your time, difficulty, toggle, or ingredient list is too tight.</p><p>${loosen.join(" ")}</p></div>`;
+    grid.querySelectorAll("button[data-fix]").forEach((b) => b.addEventListener("click", () => {
+      const fix = b.dataset.fix;
+      if (fix === "toggle") document.getElementById("makeableOnly").checked = false;
+      if (fix === "time") document.getElementById("maxTime").value = "";
+      if (fix === "difficulty") document.getElementById("difficulty").value = "Any";
+      if (fix === "ingredients") document.getElementById("ingredients").value = "";
+      refresh();
+    }));
+    return;
+  }
+  grid.innerHTML = results.slice(0, 24).map(({ recipe, score, missing }) => {
+    const hint = missing.length ? subHint(missing) : "";
+    return `<article class="card" data-id="${recipe.id}" tabindex="0"><h3>${escapeHtml(recipe.title)}</h3><p>${Math.round(score * 100)}% · ${recipe.timeMinutes} min · ${recipe.difficulty} · ${escapeHtml(recipe.cuisine)}</p>${missing.length ? `<p class="missing">Missing: ${missing.slice(0, 3).map(escapeHtml).join(", ")}${missing.length > 3 ? ` +${missing.length - 3} more` : ""}</p>${hint ? `<p class="sub">${escapeHtml(hint)}</p>` : ""}` : `<p class="makeable">All ingredients on hand</p>`}</article>`;
+  }).join("");
   grid.querySelectorAll(".card").forEach((c) => {
     c.addEventListener("click", () => openDetail(c.dataset.id));
     c.addEventListener("keydown", (e) => { if (e.key === "Enter") openDetail(c.dataset.id); });
@@ -77,7 +114,20 @@ function openDetail(id) {
 }
 
 function refresh() {
-  renderGrid(queryRecipes(readFilters(), CATALOGUE.concat(getUserRecipes())));
+  const filters = readFilters();
+  const all = CATALOGUE.concat(getUserRecipes());
+  const results = queryRecipes(filters, all);
+  renderGrid(results);
+  const note = document.getElementById("filter-note");
+  if (note) {
+    if (filters.fullyMakeableOnly) {
+      const base = queryRecipes({ ...filters, fullyMakeableOnly: false }, all);
+      const hidden = base.length - results.length;
+      note.textContent = hidden > 0 ? `${hidden} near-miss${hidden === 1 ? "" : "es"} hidden by fully-makeable filter.` : "Showing only fully-makeable recipes.";
+    } else {
+      note.textContent = "";
+    }
+  }
 }
 
 function debounce(fn, ms) {
@@ -101,7 +151,7 @@ async function boot() {
   try {
     CATALOGUE = await loadCatalogue();
     document.getElementById("catalogue-status").textContent = `${CATALOGUE.length} recipes loaded.`;
-    ["ingredients", "maxTime", "difficulty", "region"].forEach((id) =>
+    ["ingredients", "maxTime", "difficulty", "region", "makeableOnly"].forEach((id) =>
       document.getElementById(id).addEventListener("input", debounce(refresh, 200)));
     refresh();
   } catch (e) {
@@ -165,4 +215,4 @@ function queryRecipes(filters = {}, catalogue = []) {
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", boot);
-if (typeof module !== "undefined") module.exports = { loadCatalogue, validateCatalogue, queryRecipes, normalizeIngredient, STAPLES, getUserRecipes };
+if (typeof module !== "undefined") module.exports = { loadCatalogue, validateCatalogue, queryRecipes, normalizeIngredient, STAPLES, getUserRecipes, subHint, SUBSTITUTIONS };

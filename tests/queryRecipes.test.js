@@ -14,6 +14,16 @@ describe("normalize", () => {
   });
 });
 
+describe("substitutions", () => {
+  const { subHint } = require("../app.js");
+  it("suggests mapped sub for first missing hit", () => {
+    assert.equal(subHint(["butter", "saffron"]), "No butter? try vegetable oil.");
+  });
+  it("returns empty when nothing mapped", () => {
+    assert.equal(subHint(["saffron"]), "");
+  });
+});
+
 describe("queryRecipes", () => {
   const cat = [
     R("a", "Omelette", ["eggs", "onion", "salt"], 15),

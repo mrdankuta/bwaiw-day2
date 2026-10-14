@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 (needs grid to extend).
 
-**Status:** ready-for-agent
+**Status:** done (built: toggle + subs + empty-state; closed gh#4)
 
 - [ ] Each card lists missing ingredients (max 3 + "+n more") with substitution hint where the map covers it
 - [ ] Toggle keeps score==1 only and survives filter changes; count of hidden items is visible
