@@ -26,13 +26,84 @@ function showError(msg) {
   document.getElementById("catalogue-status").textContent = "Catalogue failed to load.";
 }
 
-async function boot() {
+const QUICK_STAPLES = ["salt", "oil", "water", "rice", "eggs", "onion", "garlic"];
+
+function getUserRecipes() {
   try {
-    const recipes = await loadCatalogue();
-    document.getElementById("catalogue-status").textContent = `${recipes.length} recipes loaded. Filters arrive in ticket 03.`;
-    document.getElementById("grid").innerHTML = recipes.slice(0, 24).map((r) =>
-      `<article class="card"><h3>${escapeHtml(r.title)}</h3><p>${r.timeMinutes} min · ${r.difficulty} · ${escapeHtml(r.cuisine)}</p></article>`
-    ).join("");
+    const raw = localStorage.getItem("rba:user-recipes:v1");
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+let CATALOGUE = [];
+
+function readFilters() {
+  const raw = document.getElementById("ingredients").value;
+  const ingredients = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  const maxTime = document.getElementById("maxTime").value;
+  return {
+    ingredients,
+    maxTime: maxTime === "" ? null : Number(maxTime),
+    difficulty: document.getElementById("difficulty").value,
+    region: document.getElementById("region").value,
+    fullyMakeableOnly: document.getElementById("makeableOnly")?.checked || false,
+  };
+}
+
+function renderGrid(results) {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = results.slice(0, 24).map(({ recipe, score, missing }) =>
+    `<article class="card" data-id="${recipe.id}" tabindex="0"><h3>${escapeHtml(recipe.title)}</h3><p>${Math.round(score * 100)}% · ${recipe.timeMinutes} min · ${recipe.difficulty} · ${escapeHtml(recipe.cuisine)}</p>${missing.length ? `<p class="missing">Missing: ${missing.slice(0, 3).map(escapeHtml).join(", ")}${missing.length > 3 ? ` +${missing.length - 3} more` : ""}</p>` : `<p class="makeable">All ingredients on hand</p>`}</article>`
+  ).join("");
+  grid.querySelectorAll(".card").forEach((c) => {
+    c.addEventListener("click", () => openDetail(c.dataset.id));
+    c.addEventListener("keydown", (e) => { if (e.key === "Enter") openDetail(c.dataset.id); });
+  });
+}
+
+function openDetail(id) {
+  const all = CATALOGUE.concat(getUserRecipes());
+  const r = all.find((x) => x.id === id);
+  if (!r) return;
+  const d = document.getElementById("detail");
+  const ings = r.ingredients.map((i) => `<li>${escapeHtml(typeof i === "string" ? i : i.name)}</li>`).join("");
+  d.innerHTML = `<button id="back">← Back to results</button><h2>${escapeHtml(r.title)}</h2><p>${r.timeMinutes} min · ${r.difficulty} · ${escapeHtml(r.cuisine)} · serves ${r.servings || "—"}</p><h4>Ingredients</h4><ul>${ings}</ul><h4>Steps</h4><ol>${r.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>`;
+  d.hidden = false;
+  document.getElementById("back").addEventListener("click", () => { d.hidden = true; });
+}
+
+function refresh() {
+  renderGrid(queryRecipes(readFilters(), CATALOGUE.concat(getUserRecipes())));
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+
+async function boot() {
+  const staples = document.getElementById("staples");
+  staples.innerHTML = QUICK_STAPLES.map((s) => `<button type="button" data-s="${s}">+ ${s}</button>`).join(" ");
+  staples.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-s]");
+    if (!b) return;
+    const input = document.getElementById("ingredients");
+    const cur = input.value.split(",").map((s) => s.trim()).filter(Boolean);
+    if (!cur.map((x) => x.toLowerCase()).includes(b.dataset.s)) {
+      input.value = cur.concat(b.dataset.s).join(", ");
+      refresh();
+    }
+  });
+  try {
+    CATALOGUE = await loadCatalogue();
+    document.getElementById("catalogue-status").textContent = `${CATALOGUE.length} recipes loaded.`;
+    ["ingredients", "maxTime", "difficulty", "region"].forEach((id) =>
+      document.getElementById(id).addEventListener("input", debounce(refresh, 200)));
+    refresh();
   } catch (e) {
     showError(`Could not load recipes: ${e.message}`);
   }
@@ -94,4 +165,4 @@ function queryRecipes(filters = {}, catalogue = []) {
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", boot);
-if (typeof module !== "undefined") module.exports = { loadCatalogue, validateCatalogue, queryRecipes, normalizeIngredient, STAPLES };
+if (typeof module !== "undefined") module.exports = { loadCatalogue, validateCatalogue, queryRecipes, normalizeIngredient, STAPLES, getUserRecipes };

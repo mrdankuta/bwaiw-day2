@@ -12,8 +12,12 @@
 <p id="catalogue-status" role="status">Loading catalogue…</p>
 </header>
 <main>
-<section id="input-area" aria-label="Filters (coming in ticket 03)">
-<p class="placeholder">Filters load here in ticket 03. Catalogue count shows above.</p>
+<section id="input-area" aria-label="Filters">
+<label>Ingredients (comma-separated) <input id="ingredients" type="text" placeholder="eggs, rice, tomato" autocomplete="off"></label>
+<div id="staples" aria-label="Staple quick-picks"></div>
+<label>Max time <select id="maxTime"><option value="">Any</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select></label>
+<label>Difficulty <select id="difficulty"><option>Any</option><option>Easy</option><option>Medium</option><option>Hard</option></select></label>
+<label>Region <select id="region"><option>Any</option><option>Nigeria</option><option>West-Africa</option><option>Global</option></select></label>
 </section>
 <section id="grid" aria-label="Recipe results"></section>
 <section id="detail" aria-label="Recipe detail" hidden></section>
